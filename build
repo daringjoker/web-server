@@ -1,0 +1,166 @@
+#!/bin/bash 
+#
+#Build and test script by Pukar Giri
+#
+
+
+#General Bash utils to make my scripting life easier
+
+
+#log error
+color_log(){
+  numArg=$#
+  fg_hex=$(echo $1 | sed 's/#//g')
+  fg_len=${#fg_hex}
+  if [ $fg_len -eq 3  ]; then
+  printf "\033[31;1m\033[38;2;%d;%d;%dm" 0x${fg_hex:0:1}0 0x${fg_hex:1:1}0 0x${fg_hex:2:1}0  
+  elif [ $fg_len -eq 6  ]; then
+  printf "\033[31;1m\033[38;2;%d;%d;%dm" 0x${fg_hex:0:2} 0x${fg_hex:2:2} 0x${fg_hex:4:2} 
+  fi
+
+  if [ $numArg -eq 3 ];then
+    bg_hex=$(echo $2 | sed 's/#//g')
+    bg_len=${#bg_hex}
+    if [ $bg_len -eq 3  ]; then
+      printf "\033[48;2;%d;%d;%dm%s\033[0m\n" 0x${bg_hex:0:1}0 0x${bg_hex:1:1}0 0x${bg_hex:2:1}0  "$3"
+    elif [ $bg_len -eq 6  ]; then
+      printf "\033[48;2;%d;%d;%dm%s\033[0m\n" 0x${bg_hex:0:2} 0x${bg_hex:2:2} 0x${bg_hex:4:2} "$3"
+    fi
+  else
+    printf "%s\033[0m\n" "$2"
+  fi
+}
+
+
+error ()
+{
+  color_log "#FCFFE7" "#B70404"  " [-] $1 "
+}
+
+success ()
+{
+  color_log "#6F38C5" "#06FF00" " [+] $1 "
+}
+
+warn ()
+{
+  color_log "#FF0060" "#F6FA70" " [!] $1 "
+}
+
+info(){
+  color_log "#00EAD3" "#4700D8" " [~] $1 "
+}
+
+
+resolve(){
+  if [[ $? == 0 ]]; then
+    success "$1";
+   else
+     error "$2";
+    exit -1;
+  fi
+}
+
+large_separator(){
+  echo
+  color_log "#3AB0FF" "═══════════════════════════════════════════════════════════════════"
+  echo
+}
+
+
+small_separator(){
+  color_log "#183A1D" "-------------------------------------------------------------------"
+}
+
+# real script starts here
+
+
+
+clean(){
+  info "cleaning the build directory"
+  rm -r ./.build/*
+  rm -r ./target/*
+  resolve "cleaning successful!" "cleaning failed"
+}
+
+build(){
+  cd ./.build;
+  info "Refreshing the buildfiles!";
+  cmake ..
+  resolve "Buildfiles have been Refreshed!" "Issue in the cmake file!"
+  small_separator;
+
+  info "Starting Build Process";
+  cmake --build .
+  resolve  "Build Successful! find the executables in ./build directory" "Build Failed!";
+  cd ..
+  small_separator;
+}
+
+run(){
+  build;
+  info "Executing the program";
+
+  large_separator;
+
+  ./target/webServer 
+
+  large_separator;
+  
+  success "run complete!"
+}
+
+leaktest(){
+  build;
+  info "Starting memory leak testing using Valgrind"
+  warn "on completion of the program the report is written to the valgrind.rpt file in this directory!"
+
+  large_separator;
+
+  valgrind --leak-check=full --show-leak-kinds=all --log-file=valgrind.rpt "./build/webServer"
+
+  large_separator;  
+
+  success "memory profiling complete!" 
+}
+
+test(){
+  info "test: nothing to do here"
+}
+
+success "Build Script Starts";
+small_separator;
+
+if  [ ! -d "./.build" ] ; then
+  warn "The .build directory is missing. Creating one.";
+  mkdir .build;
+  resolve ".build directory created!" ".build directory could not be created!"
+  small_separator;
+fi
+
+if  [ ! -d "./target" ] ; then
+  warn "The target directory is missing. Creating one.";
+  mkdir target;
+  resolve "target directory created!" "target directory could not be created!";
+  small_separator;
+fi
+
+no_of_args=$#
+cmd="run"
+if [ $no_of_args -gt 0 ]; then
+ cmd=$1;
+fi
+
+warn "executing script [ $cmd ]"
+$cmd
+small_separator;
+
+
+
+
+
+
+
+
+
+
