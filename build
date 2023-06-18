@@ -92,7 +92,7 @@ build(){
 
   info "Starting Build Process";
   cmake --build .
-  resolve  "Build Successful! find the executables in ./build directory" "Build Failed!";
+  resolve  "Build Successful! find the executables in ./target directory" "Build Failed!";
   cd ..
   small_separator;
 }
@@ -117,7 +117,7 @@ leaktest(){
 
   large_separator;
 
-  valgrind --leak-check=full --show-leak-kinds=all --log-file=valgrind.rpt "./build/webServer"
+  valgrind --leak-check=full --show-leak-kinds=all --log-file=valgrind.rpt "./target/webServer"
 
   large_separator;  
 
