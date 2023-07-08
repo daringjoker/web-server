@@ -1,5 +1,12 @@
+#ifndef HTTP_HELPERS
+#define HTTP_HELPERS
 #include <cstdint>
+#include <map>
+#include <string_view>
 struct Http_Version {
-  int8_t major;
-  int8_t minor;
+  unsigned long long major;
+  unsigned long long minor;
 };
+
+extern std::map<unsigned short, std::string_view> reasonPhrase;
+#endif  // !HTTP_HELPERS

@@ -8,10 +8,11 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <functional>
 #include <memory>
 
 
-Server::Server() {
+Socket_Server::Socket_Server() {
   this->server_socket = socket(AF_INET, SOCK_STREAM, 0);
 
   if (this->server_socket < 0) {
@@ -26,8 +27,8 @@ Server::Server() {
   logger.silly("Socket option set to make it reuse port!");
 }
 
-void Server::listen_for_connections(unsigned short port,
-                                    unsigned int num_concurrent_connections) {
+void Socket_Server::listen_for_connections(
+    unsigned short port, unsigned int num_concurrent_connections) {
   memset(&server_addr, 0, sizeof(server_addr));
   server_addr.sin_addr.s_addr = INADDR_ANY;
   server_addr.sin_family = AF_INET;
@@ -77,12 +78,12 @@ void Server::listen_for_connections(unsigned short port,
   }
 }
 
-void Server::register_handler(std::function<int(int, int)> conn_handler) {
-  logger.info("Regestering a Connection Handler at Address: %p",
-              *conn_handler.target<int (*)(int, int)>());
+void Socket_Server::register_handler(
+    std::function<int(int, int)> conn_handler) {
+  logger.info("Regestering a Connection Handler");
   connection_handler = conn_handler;
 }
 
-Server::~Server() {
+Socket_Server::~Socket_Server() {
   close(server_socket);
 }

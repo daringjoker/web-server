@@ -1,7 +1,7 @@
 #include <netinet/in.h>
 #include <functional>
 #include "../../utils/logger/logger.h"
-class Server {
+class Socket_Server {
  private:
   int server_socket = 0;
   struct sockaddr_in server_addr;
@@ -9,9 +9,10 @@ class Server {
   std::function<int(int, int)> connection_handler = nullptr;
 
  public:
-  Server();
+  Socket_Server();
   void listen_for_connections(unsigned short port,
                               unsigned int num_concurrent_connections = 100);
+
   void register_handler(std::function<int(int, int)> conn_handler);
-  ~Server();
+  ~Socket_Server();
 };

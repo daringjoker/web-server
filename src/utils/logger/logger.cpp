@@ -7,14 +7,15 @@
 #include <iostream>
 #include <memory>
 #include <ostream>
+#include <regex>
 #include <sstream>
 #include <string>
 #include "../color/color.h"
 
 std::map<Log_level, std::string> log_level_prefex = {
-    {Log_level::INFO, "🧋   Info"},        {Log_level::ERROR, "🐞  Error"},
-    {Log_level::SILLY, "👅  Silly"},       {Log_level::DEBUG, "🐛  Debug"},
-    {Log_level::FATAL_ERROR, "💀  Fatal"}, {Log_level::WARNING, " ❗Warn"}};
+    {Log_level::INFO, "📌 Info "},        {Log_level::ERROR, "🐞 Error"},
+    {Log_level::SILLY, "🔥 Silly"},       {Log_level::DEBUG, "🐼 Debug"},
+    {Log_level::FATAL_ERROR, "💀 Fatal"}, {Log_level::WARNING, "🔔 Warn "}};
 
 std::map<Log_level, std::string> log_level_color = {
     {Log_level::INFO, Color::green},
@@ -25,9 +26,12 @@ std::map<Log_level, std::string> log_level_color = {
      std::string(Color::white) + Color::esc::blink + Color::bg::red},
     {Log_level::WARNING, Color::yellow}};
 
-Logger Logger::Log = Logger();
+Logger Logger::Log = Logger("Static Logger");
+
+unsigned long long Logger::longestPrefixLen = 0;
 
 void Logger::log(const Log_level level, const char* format, va_list args) {
+  std::ios_base::sync_with_stdio(true);
   const time_t now = time(nullptr);
   auto timeStamp = std::make_unique<char[]>(40);
   strftime(timeStamp.get(), 40, "%r %a %d %b %Y (%z)", localtime(&now));
@@ -36,14 +40,19 @@ void Logger::log(const Log_level level, const char* format, va_list args) {
             << " " << timeStamp.get() << " " << Color::esc::resetAll;
   // show prefix if prefix is available
   if (prefix.length() > 0) {
-    std::cout << Color::white << Color::bg::lightBlue << std::right << " "
-              << prefix + " " << Color::esc::resetAll;
+    std::cout << Color::white << prefixColor << " " << prefix << " "
+              << Color::esc::resetAll;
   }
 
   // show the log_level prefix
-  std::cout << Color::purple << Color::bg::darkGray << " " << std::setw(28)
-            << std::left
-            << log_level_prefex[level] + " " + Color::esc::resetAll;
+  std::cout << Color::purple << Color::bg::darkGray << " "
+            << log_level_prefex[level] << "  " << Color::esc::resetAll;
+  const long long reqLen = (longestPrefixLen - prefix.length() -
+                            log_level_prefex[level].length() + 15);
+  std::string reqPadding =
+      reqLen > 0 ? std::string(reqLen, ' ') : std::string(" ");
+
+  std::cout << reqPadding;
   //show the msg
   std::cout << Color::esc::bold << log_level_color[level];
   vprintf(format, args);

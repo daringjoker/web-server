@@ -1,30 +1,28 @@
 #!/bin/bash 
-#
 #Build and test script by Pukar Giri
-#
-
 
 #General Bash utils to make my scripting life easier
 
 
-#log error
 color_log(){
   numArg=$#
-  fg_hex=$(echo $1 | sed 's/#//g')
+  colorArg=$1
+  fg_hex=${colorArg:1}
   fg_len=${#fg_hex}
-  if [ $fg_len -eq 3  ]; then
-  printf "\033[31;1m\033[38;2;%d;%d;%dm" 0x${fg_hex:0:1}0 0x${fg_hex:1:1}0 0x${fg_hex:2:1}0  
-  elif [ $fg_len -eq 6  ]; then
-  printf "\033[31;1m\033[38;2;%d;%d;%dm" 0x${fg_hex:0:2} 0x${fg_hex:2:2} 0x${fg_hex:4:2} 
+  if [ "$fg_len" -eq 3  ]; then
+  printf "\033[31;1m\033[38;2;%d;%d;%dm" "0x${fg_hex:0:1}0" "0x${fg_hex:1:1}0" "0x${fg_hex:2:1}0"
+  elif [ "$fg_len" -eq 6  ]; then
+  printf "\033[31;1m\033[38;2;%d;%d;%dm" "0x${fg_hex:0:2}" "0x${fg_hex:2:2}" "0x${fg_hex:4:2}" 
   fi
 
-  if [ $numArg -eq 3 ];then
-    bg_hex=$(echo $2 | sed 's/#//g')
+  if [ "$numArg" -eq 3 ];then
+  bgColorArg=$2
+    bg_hex=${bgColorArg:1}
     bg_len=${#bg_hex}
-    if [ $bg_len -eq 3  ]; then
-      printf "\033[48;2;%d;%d;%dm%s\033[0m\n" 0x${bg_hex:0:1}0 0x${bg_hex:1:1}0 0x${bg_hex:2:1}0  "$3"
-    elif [ $bg_len -eq 6  ]; then
-      printf "\033[48;2;%d;%d;%dm%s\033[0m\n" 0x${bg_hex:0:2} 0x${bg_hex:2:2} 0x${bg_hex:4:2} "$3"
+    if [ "$bg_len" -eq 3  ]; then
+      printf "\033[48;2;%d;%d;%dm%s\033[0m\n" "0x${bg_hex:0:1}0" "0x${bg_hex:1:1}0" "0x${bg_hex:2:1}0"  "$3"
+    elif [ "$bg_len" -eq 6  ]; then
+      printf "\033[48;2;%d;%d;%dm%s\033[0m\n" "0x${bg_hex:0:2}" "0x${bg_hex:2:2}" "0x${bg_hex:4:2}" "$3"
     fi
   else
     printf "%s\033[0m\n" "$2"
@@ -57,7 +55,7 @@ resolve(){
     success "$1";
    else
      error "$2";
-    exit -1;
+    exit 1;
   fi
 }
 
@@ -84,16 +82,14 @@ clean(){
 }
 
 build(){
-  cd ./.build;
   info "Refreshing the buildfiles!";
-  cmake ..
+  cmake -DCMAKE_MAKE_PROGRAM=/usr/bin/ninja -G Ninja -S /home/pukargiri/personals/webServer -B /home/pukargiri/personals/webServer/.build
   resolve "Buildfiles have been Refreshed!" "Issue in the cmake file!"
   small_separator;
 
   info "Starting Build Process";
-  cmake --build .
+  cmake --build /home/pukargiri/personals/webServer/.build --target webServer -j 12 
   resolve  "Build Successful! find the executables in ./target directory" "Build Failed!";
-  cd ..
   small_separator;
 }
 

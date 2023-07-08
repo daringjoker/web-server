@@ -1,12 +1,14 @@
 #include <string.h>
 #include <sys/socket.h>
+#include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
 
+#include "entity/http_server/server.h"
 #include "entity/request/request.h"
-#include "entity/socket_server/server.h"
+#include "utils/buffer/buffer.h"
 #include "utils/color/color.h"
 #include "utils/logger/logger.h"
 
@@ -15,7 +17,15 @@ int handle_connection(int client_socket, [[maybe_unused]] int server_socket) {
   char html[] =
       "<html> <head> <title>DaringJoker</title> </head>"
       "<body><h1>This is my brand new webserver written in c</h1>"
-      "<button> Be DJ</button>"
+      "<div id='canvas'></div>"
+      "<button "
+      "onclick='fetch(`http://localhost:9999/"
+      "`).then(data=>data.text()).then(data=>{"
+      "const div=document.querySelector(`#canvas`);"
+      "div.innerHTML= div.innerHTML+data;"
+      "console.log(data,div.innerHTML);"
+      "});'>"
+      "Be DJ</button>"
       "</body>";
 
 
@@ -28,23 +38,26 @@ int handle_connection(int client_socket, [[maybe_unused]] int server_socket) {
           "\r\n",
           strlen(html));
   long int rc = 0;
-  auto msg = std::make_unique<char[]>(584);
-  std::stringstream request_msg;
-  do {
-    rc = recv(client_socket, msg.get(), 583, 0);
-    if (rc < 0)
-      break;
-    msg[rc] = '\0';
-    request_msg << msg.get();
-    Logger::Log.silly("Read %d bytes from the client", rc);
-  } while (rc == 583);
-  Logger::Log.info("%d Bytes Received!\n%s", request_msg.str().size(),
-                   request_msg.str().c_str());
-  Request req(request_msg.str());
+  struct timeval timeout;
+  timeout.tv_sec = 1;
+  timeout.tv_usec = 0;
 
-  for (auto a : req.headers) {
-    std::cout << "\t\t" << a.first << " : " << a.second << "\n";
-  }
+  setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof timeout);
+  Buffer buf(500);
+  do {
+    rc = recv(client_socket, buf.get_ptr(), buf.ensured_rem(), 0);
+    if (rc < 0) {
+      Logger::Log.warn("Recv Failed [%d] :%s", errno, strerror(errno));
+      buf.advance(0);
+      break;
+    }
+    Logger::Log.silly("Read %d bytes from the client[ buffer size : %llu ]", rc,
+                      buf.rem());
+    buf.advance(rc);
+  } while (buf.isFull());
+  Request req(buf);
+  Logger::Log.info("%d Bytes Received!", buf.size());
+
   while (send(client_socket, header, strlen(header), 0) < strlen(header))
     ;
 
@@ -56,8 +69,8 @@ int handle_connection(int client_socket, [[maybe_unused]] int server_socket) {
 
 
 int main() {
-  Server server = Server();
-  server.register_handler(handle_connection);
-  server.listen_for_connections(9999);
+  std::srand((unsigned int)time(0ll));
+  Http_Server server;
+  server.listen(9999);
   return 0;
 }

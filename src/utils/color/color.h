@@ -1,8 +1,10 @@
 #pragma once
+#include <string>
 #include "color_helper.h"
 
-#define rgb_fg(r, g, b) "\033[38;2;" #r ";" #g ";" #b "m"
-#define rgb_bg(r, g, b) "\033[48;2;" #r ";" #g ";" #b "m"
+#define rgb_FG(r, g, b) "\033[38;2;" #r ";" #g ";" #b "m"
+#define rgb_BG(r, g, b) "\033[48;2;" #r ";" #g ";" #b "m"
+std::string rgb_bg(uint8_t r, uint8_t g, uint8_t b);
 #define escape(n) "\033[" #n "m"
 typedef char const* EscapeSequence;
 namespace Color {
